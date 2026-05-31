@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevisElec — Notes → Devis</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --border: #2a2a2a;
+    --accent: #f0c040;
+    --accent2: #e05a2b;
+    --text: #e8e8e8;
+    --muted: #666;
+    --green: #4caf7d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+
+  .badge {
+    background: var(--accent2);
+    color: white;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    min-height: calc(100vh - 65px);
+  }
+
+  .panel {
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-left { border-right: 1px solid var(--border); }
+
+  .panel-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .textarea-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    flex: 1;
+  }
+
+  textarea {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 16px;
+    resize: none;
+    flex: 1;
+    min-height: 320px;
+    outline: none;
+    border-radius: 4px;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .btn-mic {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 18px;
+    width: 44px;
+    min-height: 52px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-mic:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-mic.recording {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    background: rgba(224,90,43,0.1);
+    animation: micpulse 1s ease-in-out infinite;
+  }
+  @keyframes micpulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(224,90,43,0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(224,90,43,0); }
+  }
+
+  .mic-status {
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 1px;
+    min-height: 16px;
+    display: none;
+  }
+  .mic-status.visible { display: block; }
+
+  .hint {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: #0f0f0f;
+    border: none;
+    padding: 14px 24px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: opacity 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    font-size: 12px;
+    padding: 8px 16px;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
+
+  .output-area {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    flex: 1;
+    min-height: 320px;
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+
+  .output-area.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--accent);
+    height: 100%;
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.2; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+
+  .section-title {
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  .actions-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  @media (max-width: 768px) {
+    main { grid-template-columns: 1fr; }
+    .panel-left { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Devis<span>Elec</span></div>
+  <div class="badge">PROTOTYPE</div>
+</header>
+
+<main>
+  <!-- PANNEAU GAUCHE : notes brutes -->
+  <div class="panel panel-left">
+    <div class="panel-label">📋 Notes de visite brutes</div>
+
+    <div class="textarea-row">
+      <textarea id="notes" placeholder="Tape ou dicte tes notes chantier. Exemple :
+
+cuisine : prise four, prise frigo dédié, 2x3 prises plan de travail, hotte, spots va-et-vient
+sdb : sèche-serviette 1000W, VMC, groupe sécu
+tableau : 12 groupes, diff 30mA
+
+Abréviations OK, fautes OK, langage terrain OK."></textarea>
+      <button class="btn-mic" id="micBtn" onclick="toggleMic()" title="Dictée vocale — clic pour démarrer / arrêter">🎙️</button>
+    </div>
+
+    <div class="mic-status" id="micStatus">● ENREGISTREMENT EN COURS...</div>
+
+    <div class="hint">
+      💡 Clique sur 🎙️ pour dicter directement. Parle naturellement, l'IA comprend le jargon électricien.
+    </div>
+
+    <button class="btn" id="genBtn" onclick="genererDevis()">
+      ⚡ Générer le descriptif
+    </button>
+  </div>
+
+  <!-- PANNEAU DROIT : output structuré -->
+  <div class="panel">
+    <div class="panel-label">📄 Descriptif structuré</div>
+
+    <div class="output-area empty" id="output">
+      EN ATTENTE DE TES NOTES →
+    </div>
+
+    <div class="actions-row" id="actionsRow" style="display:none!important">
+      <button class="btn btn-secondary" onclick="copierTexte()">📋 Copier</button>
+      <button class="btn btn-secondary" id="lireBtn" onclick="lireTexte()">🔊 Lire</button>
+      <button class="btn btn-secondary" onclick="reset()">🔄 Recommencer</button>
+    </div>
+  </div>
+</main>
+
+<script>
+const SYSTEM_PROMPT = `Tu es un assistant spécialisé pour les électriciens indépendants en Belgique.
+
+Ton rôle : transformer des notes brutes de visite chantier en un descriptif de devis clair, structuré et professionnel.
+
+RÈGLES STRICTES :
+1. Organise par PIÈCE/ZONE (salon, cuisine, tableau électrique, etc.)
+2. Pour chaque poste, indique :
+   - Description claire des travaux (langage client, pas trop technique)
+   - Section de câble correcte selon les règles ci-dessous
+   - Matériaux principaux nécessaires (liste courte)
+   - Unité de quantité (forfait, par point, ml, etc.)
+3. Ajoute une section REMARQUES si tu vois des points d'attention (conformité, risques, questions à poser)
+4. Reste concis et professionnel
+5. N'invente pas de prix - laisse la colonne prix vide avec "—"
+6. Format de sortie : texte structuré avec titres clairs, pas de markdown excessif
+
+RÈGLES TECHNIQUES OBLIGATOIRES (RGIE Belgique) — à appliquer systématiquement :
+- Four encastré : circuit dédié 16A ou 20A, câble 3G6mm² (monophasé) ou 5G6mm² (triphasé)
+- Lave-vaisselle : circuit dédié 16A, câble 3G2,5mm²
+- Taque électrique / plaque induction : circuit dédié 20A ou 32A, câble 3G6mm² (monophasé) ou 5G6mm² (triphasé) selon puissance — à confirmer
+- Micro-ondes : circuit dédié 16A, câble 3G2,5mm²
+- Hotte : circuit dédié 16A, câble 3G2,5mm²
+- Réfrigérateur/congélateur : circuit dédié 16A, câble 3G2,5mm²
+- Prises plan de travail cuisine : câble 3G2,5mm², max 8 prises par circuit
+- Lave-linge : circuit dédié 16A, câble 3G2,5mm²
+- Sèche-linge : circuit dédié 16A, câble 3G2,5mm²
+- Éclairage standard : câble 3G1,5mm²
+- Prises standard chambre/salon : câble 3G2,5mm²
+- Chauffe-eau électrique : câble 3G2,5mm² ou 3G4mm² selon puissance
+
+CONTEXTE : électricien indépendant belge, TVA 6% résidentiel, normes RGIE.`;
+
+// ─── DICTÉE VOCALE ───────────────────────────────────────────
+let recognition = null;
+let isRecording = false;
+
+function initRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return null;
+
+  const r = new SpeechRecognition();
+  r.lang = 'fr-BE';
+  r.continuous = true;
+  r.interimResults = true;
+
+  let finalTranscript = '';
+
+  r.onstart = () => {
+    finalTranscript = document.getElementById('notes').value;
+    if (finalTranscript && !finalTranscript.endsWith('\n')) finalTranscript += '\n';
+  };
+
+  r.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        finalTranscript += e.results[i][0].transcript + ' ';
+      } else {
+        interim += e.results[i][0].transcript;
+      }
+    }
+    document.getElementById('notes').value = finalTranscript + interim;
+  };
+
+  r.onerror = (e) => {
+    console.error('Speech error:', e.error);
+    stopMic();
+    if (e.error === 'not-allowed') {
+      alert('Accès au micro refusé. Autorise le micro dans ton navigateur.');
+    }
+  };
+
+  r.onend = () => {
+    if (isRecording) r.start(); // relance automatiquement si on n'a pas arrêté manuellement
+  };
+
+  return r;
+}
+
+function toggleMic() {
+  if (!isRecording) {
+    startMic();
+  } else {
+    stopMic();
+  }
+}
+
+function startMic() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('Ton navigateur ne supporte pas la dictée vocale. Utilise Chrome ou Edge.');
+    return;
+  }
+  recognition = initRecognition();
+  recognition.start();
+  isRecording = true;
+  document.getElementById('micBtn').classList.add('recording');
+  document.getElementById('micBtn').textContent = '⏹️';
+  document.getElementById('micStatus').classList.add('visible');
+}
+
+function stopMic() {
+  isRecording = false;
+  if (recognition) {
+    recognition.onend = null; // empêche la relance auto
+    recognition.stop();
+    recognition = null;
+  }
+  document.getElementById('micBtn').classList.remove('recording');
+  document.getElementById('micBtn').textContent = '🎙️';
+  document.getElementById('micStatus').classList.remove('visible');
+}
+
+// ─── GÉNÉRATION DEVIS ────────────────────────────────────────
+async function genererDevis() {
+  if (isRecording) stopMic();
+
+  const notes = document.getElementById('notes').value.trim();
+  if (!notes) {
+    alert('Entre ou dicte tes notes de visite d\'abord.');
+    return;
+  }
+
+  const btn = document.getElementById('genBtn');
+  const output = document.getElementById('output');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Génération...';
+  output.className = 'output-area';
+  output.innerHTML = '<div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: 'Voici mes notes de visite chantier :\n\n' + notes + '\n\nGénère le descriptif structuré pour mon devis.'
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const texte = data.content[0].text;
+    output.className = 'output-area';
+    output.innerHTML = formaterOutput(texte);
+    document.getElementById('actionsRow').style.removeProperty('display');
+
+  } catch (err) {
+    output.innerHTML = '<span style="color:#e05a2b">Erreur : ' + err.message + '</span>';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Générer le descriptif';
+  }
+}
+
+function formaterOutput(texte) {
+  return texte
+    .replace(/^#{1,3}\s*(.+)$/gm, '<div class="section-title">$1</div>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--accent)">$1</strong>')
+    .replace(/^[-•]\s(.+)$/gm, '<div style="padding-left:12px;color:var(--muted);font-size:12px">· $1</div>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function copierTexte() {
+  const texte = document.getElementById('output').innerText;
+  navigator.clipboard.writeText(texte).then(() => {
+    const btn = event.target;
+    btn.textContent = '✅ Copié !';
+    setTimeout(() => btn.textContent = '📋 Copier', 2000);
+  });
+}
+
+function reset() {
+  if (isRecording) stopMic();
+  document.getElementById('notes').value = '';
+  const output = document.getElementById('output');
+  output.className = 'output-area empty';
+  output.textContent = 'EN ATTENTE DE TES NOTES →';
+  document.getElementById('actionsRow').style.setProperty('display', 'none', 'important');
+}
+</script>
+</body>
+</html>
+<script>
+// Ajout après le script existant — lecture vocale
+let synth = window.speechSynthesis;
+let utterance = null;
+let estEnLecture = false;
+
+function lireTexte() {
+  const btn = document.getElementById('lireBtn');
+
+  if (estEnLecture) {
+    synth.cancel();
+    estEnLecture = false;
+    btn.textContent = '🔊 Lire';
+    return;
+  }
+
+  const texte = document.getElementById('output').innerText;
+  if (!texte || texte === 'EN ATTENTE DE TES NOTES →') return;
+
+  utterance = new SpeechSynthesisUtterance(texte);
+
+  // Chercher une voix française
+  const voix = synth.getVoices();
+  const voixFR = voix.find(v => v.lang === 'fr-FR') ||
+                 voix.find(v => v.lang === 'fr-BE') ||
+                 voix.find(v => v.lang.startsWith('fr'));
+  if (voixFR) utterance.voice = voixFR;
+  utterance.lang = 'fr-FR';
+  utterance.rate = 0.95;
+
+  utterance.onstart = () => {
+    estEnLecture = true;
+    btn.textContent = '⏹️ Arrêter';
+  };
+  utterance.onend = () => {
+    estEnLecture = false;
+    btn.textContent = '🔊 Lire';
+  };
+  utterance.onerror = () => {
+    estEnLecture = false;
+    btn.textContent = '🔊 Lire';
+  };
+
+  // Sur certains Android, les voix se chargent en async
+  if (voix.length === 0) {
+    synth.addEventListener('voiceschanged', () => {
+      const v2 = synth.getVoices();
+      const fr = v2.find(v => v.lang === 'fr-FR') || v2.find(v => v.lang.startsWith('fr'));
+      if (fr) utterance.voice = fr;
+      synth.speak(utterance);
+    }, { once: true });
+  } else {
+    synth.speak(utterance);
+  }
+}
+</script>
